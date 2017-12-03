@@ -58,4 +58,19 @@ n-1: -1 0  1  2  3  4   5
 
 l<sub>n</sub> = 1 + n*C + (T<sub>n-1</sub> * 8)
 
+From Wikipedia:
+
+T<sub>n</sub> = (n(n+1)) / 2
+
+T<sub>-1</sub> = (-1 * 0) / 2
+  = 0
+T<sub>0</sub> = (0 * 1) / 2
+  = 0
+T<sub>1</sub> = (1 * 2) / 2
+  = 1
+T<sub>2</sub> = (2 * 3) / 2
+  = 3
+T<sub>3</sub> = (3 * 4) / 2
+  = 6
+
 </pre>
