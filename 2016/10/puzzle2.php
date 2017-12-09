@@ -47,22 +47,23 @@ foreach ($input as $line) {
 // run simulation
 $step = 0;
 while ($bots !== true) {
-	$bot = checkForSolution($bots);
+	if (botsAreEmpty($bots)) {
+		break;
+	}
 	echo("STEP    :" . $step . "\n");
 	$bots = step($bots);
 	$step++;
 	flush();
 }
 
+$answer = $outputs[0] * $outputs[1] * $outputs[2];
+
+echo("The answer is " . $answer . "\n");
+
 function step($bots) {
 	global $outputs;
 	
 	for ($i = 0; $i < count($bots); $i++) {
-		$bot = checkForSolution($bots);
-		if ($bot !== false) {
-			echo("SOLUTION: " . $bot . "\n");
-			return true;
-		}
 		if (count($bots[$i]['values']) == 2) {
 			$low = min($bots[$i]['values']);
 			$high = max($bots[$i]['values']);
@@ -86,15 +87,13 @@ function step($bots) {
 	return $bots;
 }
 
-function checkForSolution($bots) {
-	$checkOne = 61;
-	$checkTwo = 17;
-
+function botsAreEmpty($bots) {
+	$empty = true;
 	for ($i = 0; $i < count($bots); $i++) {
-		if (in_array($checkOne, $bots[$i]['values']) and in_array($checkTwo, $bots[$i]['values'])) {
-			return $i;
+		if (count($bots[$i]['values']) > 0) {
+			return false;
 		}
 	}
 
-	return false;
+	return $empty;
 }
