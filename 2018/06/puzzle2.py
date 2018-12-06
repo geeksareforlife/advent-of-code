@@ -1,6 +1,7 @@
 from string import ascii_lowercase
 from string import ascii_uppercase
 
+safeDistance = 10000
 
 def parseCoords(coordsList):
 	coords = []
@@ -45,13 +46,11 @@ def printGrid(grid):
 	columns = []
 	for x,column in grid.items():
 		thisColumn = []
-		for y,details in column.items():
-			if details['owner'] == 'tied':
-				thisColumn.append(".")
-			elif details['distance'] == 0:
-				thisColumn.append(ascii_uppercase[details['owner']])
+		for y,distance in column.items():
+			if distance < safeDistance:
+				thisColumn.append("#")
 			else:
-				thisColumn.append(ascii_lowercase[details['owner']])
+				thisColumn.append(".")
 		columns.append(thisColumn)
 
 	for i in range(len(columns[0])):
@@ -67,15 +66,12 @@ with open('input') as input:
 boundingBox = getBoundingBox(coords)
 
 # premake our grid, which is a dict of dicts
-grid = {key: {key: {} for key in list(range(boundingBox[0][1], boundingBox[1][1]+1))} for key in list(range(boundingBox[0][0], boundingBox[1][0]+1))}
+grid = {key: {key: 0 for key in list(range(boundingBox[0][1], boundingBox[1][1]+1))} for key in list(range(boundingBox[0][0], boundingBox[1][0]+1))}
 
 # populate the owning coords
 for i in range(len(coords)):
 	x = coords[i][0]
 	y = coords[i][1]
-	# take over that grid position, no matter what!
-	grid[x][y]['owner'] = i
-	grid[x][y]['distance'] = 0
 
 	# now check each position in the grid for each coord
 	for gridX in range(boundingBox[0][0], boundingBox[1][0]+1):
@@ -85,39 +81,12 @@ for i in range(len(coords)):
 				continue
 
 			distance = getManhattanDistance(x, y, gridX, gridY)
-			if 'owner' not in grid[gridX][gridY]:
-				# nobody has it yet, it is mine!
-				# this will only happen for the first coord, of course
-				grid[gridX][gridY]['owner'] = i
-				grid[gridX][gridY]['distance'] = distance
-			else:
-				# not tied, are we closer than the current owner?
-				if grid[gridX][gridY]['distance'] > distance:
-					# yes! it is ours
-					grid[gridX][gridY]['owner'] = i
-					grid[gridX][gridY]['distance'] = distance
-				elif grid[gridX][gridY]['distance'] == distance:
-					# lost for now!
-					grid[gridX][gridY]['owner'] = 'tied'
-					grid[gridX][gridY]['distance'] = distance
+			grid[gridX][gridY] += distance
 
-# now we have populated the grid, we need to add up how many points each coord owns
-# if their area touches the edge of the bounding box then it is infinite
-# we will store this as -1
-ownedCount = [0] * len(coords)
-
+regionSize = 0
 for x,column in grid.items():
-	for y,details in column.items():
-		if details['owner'] == 'tied':
-			continue
-		if isEdge((x,y),boundingBox):
-			ownedCount[int(details['owner'])] = -1
-		else:
-			if ownedCount[int(details['owner'])] == -1:
-				# this owner is already tied
-				continue
-			else:
-				ownedCount[int(details['owner'])] += 1
+	for y,distance in column.items():
+		if distance < safeDistance:
+			regionSize += 1
 
-
-print("The largest area is " + str(max(ownedCount)))
+print("The safe region is " + str(regionSize) + " units")
