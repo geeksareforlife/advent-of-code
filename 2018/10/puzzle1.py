@@ -61,7 +61,7 @@ thisBoundingBox = getBoundingBoxArea(points)
 lastBoundingBox = thisBoundingBox
 
 while True:
-	print(thisBoundingBox)
+	#print(thisBoundingBox)
 	oldPoints = deepcopy(points)
 	points = applyVelocities(points)
 	thisBoundingBox = getBoundingBoxArea(points)
