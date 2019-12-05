@@ -75,7 +75,10 @@ class Intcode:
 		for i in range(1, num + 1):
 			addresses.append(self._getValueFromAddress(self._pointer + i))
 
-		return tuple(addresses)
+		if len(addresses) > 1:
+			return tuple(addresses)
+		else:
+			return addresses[0]
 
 	def _getValues(self, addresses, parameters):
 		values = []
@@ -89,7 +92,10 @@ class Intcode:
 				# immediate mode
 				values.append(address)
 
-		return tuple(values)
+		if len(values) > 1:
+			return tuple(values)
+		else:
+			return values[0]
 
 	def _outputMessage(self, message):
 		print("**" + message.upper() + "**")
@@ -105,19 +111,57 @@ class Intcode:
 
 	def _processOperation(self, opcode, parameterString):
 		if opcode == 99:
+			# HALT
+			# 0 parameters
 			self._outputMessage("Halt")
 			self._running = False
 			self._halted = True
 			self._incrementPointer()
-		elif opcode == 1:
+		elif opcode == 1 or opcode == 2 or opcode == 7 or opcode == 8:
+			# ADDITION / MULTIPLY / LESS THAN / EQUALS
+			# 3 parameters - input A, input B, output address
 			parameters = self._parseParameters(parameterString, 3)
 			inputA, inputB, outputAddress = self._getAddresses(3)
 			inputA, inputB = self._getValues([inputA, inputB], parameters)
-			self._storeValueAtAddress(inputA + inputB, outputAddress)
+			if opcode == 1:
+				value = inputA + inputB
+			elif opcode == 2:
+				value = inputA * inputB
+			elif opcode == 7:
+				if inputA < inputB:
+					value = 1
+				else:
+					value = 0
+			elif opcode == 8:
+				if inputA == inputB:
+					value = 1
+				else:
+					value = 0
+			self._storeValueAtAddress(value, outputAddress)
 			self._incrementPointer(4)
-		elif opcode == 2:
-			parameters = self._parseParameters(parameterString, 3)
-			inputA, inputB, outputAddress = self._getAddresses(3)
-			inputA, inputB = self._getValues([inputA, inputB], parameters)
-			self._storeValueAtAddress(inputA * inputB, outputAddress)
-			self._incrementPointer(4)
+		elif opcode == 3:
+			# INPUT
+			# 1 parameter - output address
+			parameters = self._parseParameters(parameterString, 1)
+			outputAddress = self._getAddresses(1)
+			value = int(input())
+			self._storeValueAtAddress(value, outputAddress)
+			self._incrementPointer(2)
+		elif opcode == 4:
+			# OUTPUT
+			# 1 parameter - input
+			parameters = self._parseParameters(parameterString, 1)
+			value = self._getAddresses(1)
+			value = self._getValues([value], parameters)
+			self._outputMessage("output: " + str(value))
+			self._incrementPointer(2)
+		elif opcode == 5 or opcode == 6:
+			# JUMP IF TRUE / JUMP IF FALSE
+			# 2 parameters - test and pointer value
+			parameters = self._parseParameters(parameterString, 2)
+			test, pointer = self._getAddresses(2)
+			test, pointer = self._getValues([test, pointer], parameters)
+			if (opcode == 5 and test > 0) or (opcode == 6 and test == 0):
+				self._pointer = pointer
+			else:
+				self._incrementPointer(3)
