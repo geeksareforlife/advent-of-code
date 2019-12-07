@@ -1,3 +1,5 @@
+from collections import deque
+
 class Intcode:
 	_programme = ""
 	_loaded = False
@@ -6,8 +8,14 @@ class Intcode:
 	_halted = False
 	_errorMessage = None
 
+	_input = deque([])
+	_output = deque([])
+	_outputMode = "immediate"
+
 	def loadProgramme(self, programme):
 		self._loaded = True
+		self._input = deque([])
+		self._output = deque([])
 		self._programme = [int(i) for i in programme.strip().split(",")]
 
 	def setNoun(self, value):
@@ -18,6 +26,18 @@ class Intcode:
 
 	def getAddressZero(self):
 		return self._getValueFromAddress(0)
+
+	def addInput(self, input):
+		self._input.append(input)
+
+	def setOutputMode(self, mode):
+		allowedModes = ["immediate", "saved"]
+		if mode in allowedModes:
+			self._outputMode = mode
+
+	def getOutput(self):
+		if len(self._output) > 0:
+			return self._output.popleft()
 
 	def run(self):
 		self._pointer = 0
@@ -113,7 +133,8 @@ class Intcode:
 		if opcode == 99:
 			# HALT
 			# 0 parameters
-			self._outputMessage("Halt")
+			if self._outputMode == "immediate":
+				self._outputMessage("Halt")
 			self._running = False
 			self._halted = True
 			self._incrementPointer()
@@ -144,7 +165,10 @@ class Intcode:
 			# 1 parameter - output address
 			parameters = self._parseParameters(parameterString, 1)
 			outputAddress = self._getAddresses(1)
-			value = int(input())
+			if (len(self._input) > 0):
+				value = self._input.popleft()
+			else:
+				value = int(input())
 			self._storeValueAtAddress(value, outputAddress)
 			self._incrementPointer(2)
 		elif opcode == 4:
@@ -153,7 +177,10 @@ class Intcode:
 			parameters = self._parseParameters(parameterString, 1)
 			value = self._getAddresses(1)
 			value = self._getValues([value], parameters)
-			self._outputMessage("output: " + str(value))
+			if self._outputMode == "saved":
+				self._output.append(value)
+			elif self._outputMode == "immediate":
+				self._outputMessage("output: " + str(value))
 			self._incrementPointer(2)
 		elif opcode == 5 or opcode == 6:
 			# JUMP IF TRUE / JUMP IF FALSE
