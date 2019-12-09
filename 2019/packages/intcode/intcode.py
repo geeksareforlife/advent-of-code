@@ -7,6 +7,7 @@ class Intcode:
 	_running = False
 	_halted = False
 	_errorMessage = None
+	_relativeBase = 0
 
 	_waitingForInput = False
 
@@ -19,13 +20,14 @@ class Intcode:
 		self._loaded = True
 		self._input = deque([])
 		self._output = deque([])
+		self._relativeBase = 0
 		self._programme = [int(i) for i in programme.strip().split(",")]
 
 	def setNoun(self, value):
-		self._storeValueAtAddress(value, 1)
+		self._storeValueAtAddress(value, 1, 0)
 
 	def setVerb(self, value):
-		self._storeValueAtAddress(value, 2)
+		self._storeValueAtAddress(value, 2, 0)
 
 	def getAddressZero(self):
 		return self._getValueFromAddress(0)
@@ -86,6 +88,13 @@ class Intcode:
 
 	def _addressExists(self, address):
 		if address >= len(self._programme):
+			# expand the programme so that it does exist!
+			# fill any addresses with zeros
+			newAddresses = [0] * (address - len(self._programme) + 1)
+			self._programme = self._programme + newAddresses
+
+			return True
+		elif address < 0:
 			return False
 		else:
 			return True
@@ -97,7 +106,10 @@ class Intcode:
 			# stop the programme
 			raise Exception("Attempted to read value from non-existent address: " + str(address))
 
-	def _storeValueAtAddress(self, value, address):
+	def _storeValueAtAddress(self, value, address, parameter):
+		if parameter == 2:
+			address = self._relativeBase + address
+
 		if self._addressExists(address):
 			self._programme[address] = value
 		else:
@@ -135,6 +147,9 @@ class Intcode:
 			elif parameters[i] == 1:
 				# immediate mode
 				values.append(address)
+			elif parameters[i] == 2:
+				# relative mode
+				values.append(self._getValueFromAddress(self._relativeBase + address))
 
 		if len(values) > 1:
 			return tuple(values)
@@ -182,7 +197,7 @@ class Intcode:
 					value = 1
 				else:
 					value = 0
-			self._storeValueAtAddress(value, outputAddress)
+			self._storeValueAtAddress(value, outputAddress, parameters[2])
 			self._incrementPointer(4)
 		elif opcode == 3:
 			# INPUT
@@ -202,7 +217,7 @@ class Intcode:
 					increment = 0
 
 			if increment > 0:
-				self._storeValueAtAddress(value, outputAddress)
+				self._storeValueAtAddress(value, outputAddress, parameters[0])
 				self._incrementPointer(increment)
 		elif opcode == 4:
 			# OUTPUT
@@ -225,3 +240,11 @@ class Intcode:
 				self._pointer = pointer
 			else:
 				self._incrementPointer(3)
+		elif opcode == 9:
+			# ADJUST RELATIVE BASE
+			# 1 parameter - input
+			parameters = self._parseParameters(parameterString, 1)
+			adjustment = self._getAddresses(1)
+			adjustment = self._getValues([adjustment], parameters)
+			self._relativeBase = self._relativeBase + adjustment
+			self._incrementPointer(2)
