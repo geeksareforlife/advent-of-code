@@ -8,8 +8,11 @@ class Intcode:
 	_halted = False
 	_errorMessage = None
 
+	_waitingForInput = False
+
 	_input = deque([])
 	_output = deque([])
+	_inputMode = "console"
 	_outputMode = "immediate"
 
 	def loadProgramme(self, programme):
@@ -27,8 +30,16 @@ class Intcode:
 	def getAddressZero(self):
 		return self._getValueFromAddress(0)
 
+	def setInputMode(self, mode):
+		allowedModes = ["console", "internal"]
+		if mode in allowedModes:
+			self._inputMode = mode
+
 	def addInput(self, input):
 		self._input.append(input)
+		if self._waitingForInput:
+			self._waitingForInput = False
+			self._continue()
 
 	def setOutputMode(self, mode):
 		allowedModes = ["immediate", "saved"]
@@ -38,6 +49,11 @@ class Intcode:
 	def getOutput(self):
 		if len(self._output) > 0:
 			return self._output.popleft()
+		else:
+			return False
+
+	def hasHalted(self):
+		return self._halted
 
 	def run(self):
 		self._pointer = 0
@@ -45,6 +61,9 @@ class Intcode:
 		self._running = True
 		self._halted = False
 
+		return self._runProgramme()
+
+	def _runProgramme(self):
 		while self._running and self._pointer < len(self._programme):
 			instruction = self._getValueFromAddress(self._pointer)
 
@@ -59,6 +78,11 @@ class Intcode:
 			return True
 		else:
 			return False
+
+	def _continue(self):
+		self._running = True
+
+		return self._runProgramme()
 
 	def _addressExists(self, address):
 		if address >= len(self._programme):
@@ -165,12 +189,21 @@ class Intcode:
 			# 1 parameter - output address
 			parameters = self._parseParameters(parameterString, 1)
 			outputAddress = self._getAddresses(1)
-			if (len(self._input) > 0):
-				value = self._input.popleft()
-			else:
+			if self._inputMode == "console":
 				value = int(input())
-			self._storeValueAtAddress(value, outputAddress)
-			self._incrementPointer(2)
+				increment = 2
+			elif self._inputMode == "internal":
+				if (len(self._input) > 0):
+					value = self._input.popleft()
+					increment = 2
+				else:
+					self._waitingForInput = True
+					self._running = False
+					increment = 0
+
+			if increment > 0:
+				self._storeValueAtAddress(value, outputAddress)
+				self._incrementPointer(increment)
 		elif opcode == 4:
 			# OUTPUT
 			# 1 parameter - input
