@@ -8,6 +8,8 @@ class Intcode:
 	_halted = False
 	_errorMessage = None
 
+	_waitingForInput = False
+
 	_input = deque([])
 	_output = deque([])
 	_inputMode = "console"
@@ -35,6 +37,9 @@ class Intcode:
 
 	def addInput(self, input):
 		self._input.append(input)
+		if self._waitingForInput:
+			self._waitingForInput = False
+			self._continue()
 
 	def setOutputMode(self, mode):
 		allowedModes = ["immediate", "saved"]
@@ -47,8 +52,8 @@ class Intcode:
 		else:
 			return False
 
-	def isRunning(self):
-		return self._running
+	def hasHalted(self):
+		return self._halted
 
 	def run(self):
 		self._pointer = 0
@@ -56,6 +61,9 @@ class Intcode:
 		self._running = True
 		self._halted = False
 
+		return self._runProgramme()
+
+	def _runProgramme(self):
 		while self._running and self._pointer < len(self._programme):
 			instruction = self._getValueFromAddress(self._pointer)
 
@@ -70,6 +78,11 @@ class Intcode:
 			return True
 		else:
 			return False
+
+	def _continue(self):
+		self._running = True
+
+		return self._runProgramme()
 
 	def _addressExists(self, address):
 		if address >= len(self._programme):
@@ -184,6 +197,8 @@ class Intcode:
 					value = self._input.popleft()
 					increment = 2
 				else:
+					self._waitingForInput = True
+					self._running = False
 					increment = 0
 
 			if increment > 0:
