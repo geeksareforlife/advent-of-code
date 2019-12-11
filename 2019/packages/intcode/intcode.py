@@ -9,6 +9,10 @@ class Intcode:
 	_errorMessage = None
 	_relativeBase = 0
 
+	_debugAddress = False
+	_debugOpCodes = False
+	_debugParameters = False
+
 	_waitingForInput = False
 
 	_input = deque([])
@@ -28,6 +32,12 @@ class Intcode:
 
 	def setVerb(self, value):
 		self._storeValueAtAddress(value, 2, 0)
+
+	def showOpCodes(self):
+		self._debugAddress = True
+		self._debugOpCodes = True
+		self._debugParameters = True
+
 
 	def getAddressZero(self):
 		return self._getValueFromAddress(0)
@@ -70,6 +80,13 @@ class Intcode:
 			instruction = self._getValueFromAddress(self._pointer)
 
 			opcode, parameterString = self._parseInstruction(instruction)
+
+			if self._debugAddress == True:
+				print("ADDRESS: " + str(self._pointer))
+			if self._debugOpCodes == True:
+				print("OP: " + str(opcode))
+			if self._debugParameters == True:
+				print("PARAS: " + str(parameterString))
 
 			if opcode:
 				self._processOperation(opcode, parameterString)
@@ -205,6 +222,7 @@ class Intcode:
 			parameters = self._parseParameters(parameterString, 1)
 			outputAddress = self._getAddresses(1)
 			if self._inputMode == "console":
+				self._outputMessage("Input Please")
 				value = int(input())
 				increment = 2
 			elif self._inputMode == "internal":
