@@ -5,7 +5,7 @@ from intcode.intcode import Intcode
 
 computer = Intcode()
 
-f = open('11/input.matt')
+f = open('13/input')
 programme = f.read();
 
 computer.loadProgramme(programme)

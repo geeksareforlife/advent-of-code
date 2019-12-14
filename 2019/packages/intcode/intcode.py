@@ -62,7 +62,7 @@ class Intcode:
 		if len(self._output) > 0:
 			return self._output.popleft()
 		else:
-			return False
+			return None
 
 	def hasHalted(self):
 		return self._halted
